@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen p-6">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <div class="flex items-center gap-3 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                <h1 class="text-3xl font-bold text-gray-800">Speech Converter</h1>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Text to Speech -->
+                <div class="border-b pb-6">
+                    <h2 class="text-xl font-semibold mb-4">Text to Speech</h2>
+                    <textarea id="textInput" class="w-full h-32 p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" placeholder="Enter text to convert to speech..."></textarea>
+                    <button onclick="convertTextToSpeech()" class="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
+                        Convert to Speech
+                    </button>
+                </div>
+
+                <!-- Speech to Text -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Speech to Text</h2>
+                    <div class="space-y-4">
+                        <input type="file" id="audioInput" accept="audio/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"/>
+                        <button onclick="convertSpeechToText()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
+                            Convert to Text
+                        </button>
+                        <div id="transcriptionResult" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function convertTextToSpeech() {
+            const text = document.getElementById('textInput').value;
+            if (!text) return;
+
+            try {
+                const response = await fetch('/api/text-to-speech/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text }),
+                });
+
+                const data = await response.json();
+                if (data.audio_url) {
+                    const audio = new Audio(data.audio_url);
+                    audio.play();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function convertSpeechToText() {
+            const audioFile = document.getElementById('audioInput').files[0];
+            if (!audioFile) return;
+
+            const formData = new FormData();
+            formData.append('audio', audioFile);
+
+            try {
+                const response = await fetch('/api/speech-to-text/', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('transcriptionResult');
+                resultDiv.textContent = data.text;
+                resultDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
